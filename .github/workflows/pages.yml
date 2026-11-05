@@ -1,4 +1,5 @@
 # main に送られたら、app/ の中身だけを GitHub Pages に公開する
+# （app/ かこのファイルが変わったときだけ動く。手で動かすときは GitHub の Actions → Pages → Run workflow）
 name: Pages
 
 on:
