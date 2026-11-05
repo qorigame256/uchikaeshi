@@ -21,7 +21,9 @@
   `index.html`・`css/style.css`・`js/main.js`（画面の流れ・試合の進行・描画）・`js/sim.js`（試合の数字と球・人の動きの計算。自分・相手・CPU が共通で使う）・
   `js/net.js`（通信。かくれんぼ戦の写しで、違いは中継の話題名 `uchikaeshi/v1/` と接続名の頭 `uk_` だけ）・`js/input.js`（キーボード・マウス・スマホ操作）・
   `js/cpu.js`（CPU。強さごとの数字は先頭の LEVELS）・`js/audio.js`（効果音の合成）・`js/profile.js`（名前・音量の保存）。
-- `tools/serve.js` … 手元で開くサーバー（`node tools/serve.js` → http://localhost:5178/）。`.claude/launch.json` にも登録してある。
+- 手元で開くサーバー … `.claude/launch.json` の `uchikaeshi` が共通の `C:/Users/kouri/Desktop/Claudeの使い道/tools/quiet-serve.js` で `app/` を
+  http://127.0.0.1:5178/ に出し、音を消して返す（Claude が裏で確かめるときに本人に音が聞こえないため。2026-11-05 本人の依頼。URL に `?sound` を付けると鳴る）。
+  前にあった `tools/serve.js` は同じ働きなので消した。
 - `tools/balance.mjs` … CPU どうしを画面なしで戦わせ、試合の長さ・返球の回数・球の速さ・強さごとの勝ち負けを測る（`node tools/balance.mjs`。使い方は先頭）。
   `sim.js` と `cpu.js` はそのまま読むが、試合の進め方は `main.js` の `update()` の写しなので、**`main.js` の試合の進め方を変えたらこちらも合わせる**。
 - 外から読み込む部品: mqtt.js 5.16.1（中継サーバーとの通信）。2026-11-05 に重い弱点が無いことを確かめた（5.15.2 以前には 2026-09-16 公表の弱点6件がある）。版を変えるときは調べ直す。

@@ -4,7 +4,7 @@
     {
       "name": "uchikaeshi",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["tools/serve.js", "5178"],
+      "runtimeArgs": ["C:/Users/kouri/Desktop/Claudeの使い道/tools/quiet-serve.js", "app", "5178"],
       "port": 5178
     }
   ]
