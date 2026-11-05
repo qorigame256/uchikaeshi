@@ -66,13 +66,16 @@ function playMatch(lv0, lv1) {
     const a = S.clampAim(i, p.aim);
     return { x: S.clamp(p.x + Math.cos(a) * 0.75, S.BALL_R, S.W - S.BALL_R), y: p.y + Math.sin(a) * 0.75 };
   };
-  const launch = (i, speed) => {
+  const launch = (i, base, just = false) => {
     const p = G.players[i];
     p.hitDone = true;
     const a = S.clampAim(i, p.aim);
+    const speed = S.flightSpeed(base, just);
     G.ball.vx = Math.cos(a) * speed;
     G.ball.vy = Math.sin(a) * speed;
     G.ball.speed = speed;
+    G.ball.base = base;
+    G.ball.just = just;
     G.n++;
   };
   const startSwing = (i) => {
@@ -96,7 +99,7 @@ function playMatch(lv0, lv1) {
     const just = p.swing <= S.JUST_WINDOW && p.outsideAtPress;
     if (just) rec.just++;
     rec.hits++;
-    launch(i, S.nextSpeed(G.ball.speed, just));
+    launch(i, S.nextSpeed(G.ball.base), just);
   };
   const movePlayer = (i, mv) => {
     const p = G.players[i];
@@ -110,7 +113,7 @@ function playMatch(lv0, lv1) {
     const p = G.players[loser];
     // 取りこぼしたときの様子: 球の速さ・返球の回数・人と球の横のずれ・振っていたか
     rec.points.push({
-      w, speed: G.ball.speed, returns: Math.max(0, G.n - 1), dur: rec.time - pointStart,
+      w, speed: G.ball.base, byJust: G.ball.just && G.n > 0, returns: Math.max(0, G.n - 1), dur: rec.time - pointStart,
       gapX: Math.abs(G.ball.x - p.x), state: p.swing >= 0 ? 'swinging' : p.recover > 0 ? 'recover' : 'idle',
     });
     G.sc[w]++;
@@ -200,7 +203,9 @@ for (const [a, b] of PAIRS) {
   console.log(`  1点あたりの返球: 平均 ${avg(ret).toFixed(1)} 回（中央 ${q(ret, 0.5)}・長い1割 ${q(ret, 0.9)}）・返せずにサーブで決まった点 ${pct(ret.filter((v) => v === 0).length, pts.length)}`);
   console.log(`  1点の球が動いていた時間: 平均 ${avg(pts.map((p) => p.dur)).toFixed(1)} 秒`);
   console.log(`  点が決まったときの球の速さ: 平均 ${kmh(avg(pts.map((p) => p.speed)))} km/h（中央 ${kmh(q(pts.map((p) => p.speed), 0.5))}・上限 ${kmh(S.MAX_SPEED)} に届いた点 ${pct(pts.filter((p) => p.speed >= S.MAX_SPEED - 0.01).length, pts.length)}）`);
-  console.log(`  ぴったり打ち: 打ち返しの ${pct(just, hits)}`);
+  const justWin = pts.filter((p) => p.byJust).length;
+  const normalWin = pts.filter((p) => !p.byJust && p.returns > 0).length;
+  console.log(`  ぴったり打ち: 打ち返しの ${pct(just, hits)}・相手が返せなかった割合 ぴったり ${pct(justWin, just)}／ふつう ${pct(normalWin, hits - just)}`);
   console.log(`  取りこぼしたときの様子: ${Object.entries(states).map(([k, v]) => `${{ idle: '振っていない', swinging: '振っている最中', recover: '振り終わりで動けない' }[k]} ${pct(v, pts.length)}`).join('・')}・球との横のずれ 平均 ${avg(pts.map((p) => p.gapX)).toFixed(2)} m`);
 }
 
@@ -212,13 +217,13 @@ for (const v of [S.SERVE_SPEED, 10, 14, 18, 22, S.MAX_SPEED]) {
   const tAngle = dist / (v * Math.cos(S.AIM_LIMIT));
   console.log(`  ${kmh(v)} km/h: まっすぐ ${tStraight.toFixed(2)} 秒・いちばん斜め ${tAngle.toFixed(2)} 秒（横に ${(S.MOVE_SPEED * tAngle).toFixed(1)} m 動ける）`);
 }
-// 返球の回数ごとの速さ（ぴったり無し／全部ぴったり）
-let s1 = S.SERVE_SPEED, s2 = S.SERVE_SPEED;
+// 返球の回数ごとの速さ（もとの速さ／その回がぴったり打ちだったときに飛ぶ速さ）
+let s1 = S.SERVE_SPEED;
 const row1 = [], row2 = [];
 for (let n = 1; n <= 20; n++) {
-  s1 = S.nextSpeed(s1, false); s2 = S.nextSpeed(s2, true);
-  if (n % 2 === 0 || n <= 3) { row1.push(`${n}回目 ${kmh(s1)}`); row2.push(`${n}回目 ${kmh(s2)}`); }
+  s1 = S.nextSpeed(s1);
+  if (n % 2 === 0 || n <= 3) { row1.push(`${n}回目 ${kmh(s1)}`); row2.push(`${n}回目 ${kmh(S.flightSpeed(s1, true))}`); }
 }
 console.log('\n■ 返球の回数と速さ（km/h）');
-console.log('  ふつうの打ち返しだけ: ' + row1.join('・'));
-console.log('  全部ぴったり打ち:     ' + row2.join('・'));
+console.log('  もとの速さ:           ' + row1.join('・'));
+console.log('  ぴったり打ちの1球:    ' + row2.join('・'));

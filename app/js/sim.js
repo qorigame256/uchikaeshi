@@ -12,7 +12,9 @@ export const SWING_TIME = 0.25;   // 剣が出ている時間（ルール2）
 export const RECOVER_TIME = 0.25; // 振り終わったあと動けない時間（ルール2。2026-11-05 本人決定で 0.4 から縮めた）
 export const JUST_WINDOW = 0.07;  // 振り始めてからこの秒数のうちに当たると「ぴったり打ち」（ルール3）
 export const SERVE_SPEED = 7;     // 最初の球の速さ
-export const MAX_SPEED = 28;      // 球の速さの上限
+export const MAX_SPEED = 28;      // 球の速さ（もとの速さ）の上限
+export const JUST_BOOST = 1.3;    // ぴったり打ちの球は、その1球だけもとの速さのこの倍で飛ぶ（2026-11-05 本人決定の仕組み。倍率は Claude の値）
+export const JUST_MAX = 32;       // ぴったり打ちの球が飛ぶ速さの上限（Claude の値）
 export const AIM_LIMIT = 60 * Math.PI / 180; // 正面から左右に打ち分けられる角度の限り
 export const WIN_POINTS = 5;      // ルール6
 export const AUTO_SERVE = 5;      // これだけ待っても打たなければ、まっすぐ自動で出る
@@ -45,8 +47,14 @@ export function clampAim(i, a) {
   return f + clamp(d, -AIM_LIMIT, AIM_LIMIT);
 }
 
-export function nextSpeed(s, just) {
-  return Math.min(MAX_SPEED, just ? s * 1.12 + 1.5 : s * 1.05 + 0.4);
+// 球には「もとの速さ」（打ち返すたびに少しずつ上がる）と「飛ぶ速さ」がある。ふつうは同じで、ぴったり打ちの球だけ飛ぶ速さが速い。
+// ぴったり打ちでもとの速さは余分に上がらない（最初は大きく積み上がる作りだったが、本人が遊んで「速くなるペースが速すぎる」と
+// 言ったので 2026-11-05 に変えた。ぴったり打ちの得は、その1球だけ速いことにした）
+export function nextSpeed(base) {
+  return Math.min(MAX_SPEED, base * 1.05 + 0.4);
+}
+export function flightSpeed(base, just) {
+  return just ? Math.min(JUST_MAX, base * JUST_BOOST) : base;
 }
 
 // 球を dt 秒動かす。横の壁で跳ね返ったら true

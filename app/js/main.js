@@ -215,10 +215,11 @@ function applyRemoteHit(h) {
   if (h.r !== G.r || !Number.isInteger(h.n) || h.n <= G.n) return;
   if (![h.x, h.y, h.vx, h.vy, h.sp, h.age].every(num)) return;
   if (S.defenderOf(h.vy) !== G.me) return;
-  const sp = Math.min(S.MAX_SPEED, Math.hypot(h.vx, h.vy));
+  // sp はもとの速さ、vx・vy の長さは飛ぶ速さ（ぴったり打ちの球だけ sp より速い）
+  const sp = Math.min(S.JUST_MAX, Math.hypot(h.vx, h.vy));
   const k = sp / Math.max(0.01, Math.hypot(h.vx, h.vy));
   G.n = h.n;
-  G.ball = { x: S.clamp(h.x, 0, S.W), y: S.clamp(h.y, 0, S.L), vx: h.vx * k, vy: h.vy * k, speed: sp };
+  G.ball = { x: S.clamp(h.x, 0, S.W), y: S.clamp(h.y, 0, S.L), vx: h.vx * k, vy: h.vy * k, speed: sp, base: S.clamp(h.sp, S.SERVE_SPEED, S.MAX_SPEED) };
   const lag = Math.min(0.15, Math.max(0, rtt / 2000));
   S.advance(G.ball, Math.min(0.5, h.age) + lag);
   const wasServe = G.phase === 'serve';
@@ -279,6 +280,7 @@ function applyProgress(m) {
     myAgain = false;
     foeAgain = false;
     Object.assign(stats, { bestRally: 0, just: 0, top: 0 });
+    tension = 0;
     show(null);
     banner('試合開始　' + S.WIN_POINTS + '点先取', 1.6);
     if (input.touchMode || matchMedia('(pointer: coarse)').matches) { $('touchHint').hidden = false; setTimeout(() => { $('touchHint').hidden = true; }, 5000); }
@@ -323,16 +325,19 @@ function startSwing(i) {
   if (G.mode === 'online' && i === G.me) sendState(true);
 }
 
-function launch(i, speed, just) {
+// base はもとの速さ。飛ぶ速さはぴったり打ちのときだけ速くなる（sim.js の flightSpeed）
+function launch(i, base, just) {
   const p = G.players[i];
   p.hitDone = true;
   const a = S.clampAim(i, p.aim);
   const b = G.ball;
+  const speed = S.flightSpeed(base, just);
   b.vx = Math.cos(a) * speed;
   b.vy = Math.sin(a) * speed;
   b.speed = speed;
+  b.base = base;
   G.n++;
-  G.lastHit = { r: G.r, n: G.n, x: b.x, y: b.y, vx: b.vx, vy: b.vy, sp: speed, j: just, by: i, at: now() };
+  G.lastHit = { r: G.r, n: G.n, x: b.x, y: b.y, vx: b.vx, vy: b.vy, sp: base, j: just, by: i, at: now() };
   if (G.mode === 'online' && i === G.me) net.send({ t: 'h', ...hitMsg() });
 }
 
@@ -356,7 +361,7 @@ function checkHit(i) {
   if (p.swing < 0 || p.hitDone) return;
   if (Math.hypot(G.ball.x - p.x, G.ball.y - p.y) > S.REACH + S.BALL_R) return;
   const just = p.swing <= S.JUST_WINDOW && p.outsideAtPress;
-  launch(i, S.nextSpeed(G.ball.speed, just), just);
+  launch(i, S.nextSpeed(G.ball.base ?? G.ball.speed), just);
   hitEffects(i, just, false);
 }
 
@@ -457,6 +462,7 @@ function update(dt) {
     }
   }
   wallSfxT -= dt;
+  tickTension(dt);
 
   if (G.phase === 'rally' || G.phase === 'serve') {
     G.trail.push({ x: G.ball.x, y: G.ball.y });
@@ -485,6 +491,25 @@ function sendState() {
 let flash = 0;
 let shake = 0;
 let rally = 0;
+// 緊迫感の演出（見た目と音だけ。試合の動きには関わらない。数字は Claude の値）
+let tension = 0;   // 0〜1。球の速さに遅れて付いていく
+let heartT = 0;    // 次の鼓動までの秒
+const speedRatio = () => S.clamp((G.ball.speed - S.SERVE_SPEED) / (S.MAX_SPEED - S.SERVE_SPEED), 0, 1);
+
+function tickTension(dt) {
+  const target = G.phase === 'rally' ? speedRatio() : 0;
+  // 上がるときは素早く、点が決まったあとはゆっくり引く
+  tension += (target - tension) * (1 - Math.exp(-dt * (target > tension ? 6 : 1.2)));
+  // 鼓動は打ち合いの間だけ。間隔は遅い球 1.5 秒 → 上限の速さ 0.75 秒
+  // （最初の 0.95〜0.35 秒は本人が遊んで「うるさすぎる」と言ったので、2026-11-05 本人決定でペースを下げた）
+  if (G.phase === 'rally' && !G.frozen) {
+    heartT -= dt;
+    if (heartT <= 0) {
+      A.sfxHeart(speedRatio());
+      heartT = 1.5 - 0.75 * speedRatio();
+    }
+  } else heartT = 0.4;
+}
 const parts = [];
 const floats = [];
 
@@ -661,6 +686,7 @@ function render(dt) {
     ctx.fillText(f.text, s.x, s.y - (0.9 - f.life) * sc * 1.5 - sc * 0.6);
   }
   ctx.restore();
+  drawTension(tl, aw, ah);
 
   if (flash > 0) {
     ctx.fillStyle = `rgba(255,255,255,${flash * 0.5})`;
@@ -668,6 +694,27 @@ function render(dt) {
   }
   flash = Math.max(0, flash - dt * 1.5);
   shake = Math.max(0, shake - dt);
+}
+
+// 球が速いほど画面の周りが暗く狭まる。
+// 闘技場の中は暗くしない（球や相手が見えにくくなると腕前の勝負でなくなるため）。
+// 縁が赤く脈打つ演出もあったが、本人が「チカチカしてまぶしい」と言ったので 2026-11-05 に外した（戻さない）
+function drawTension(tl, aw, ah) {
+  if (tension < 0.02) return;
+  const { w, h } = view;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.rect(tl.x, tl.y, aw, ah);
+  ctx.clip('evenodd');
+  const R = Math.hypot(w, h) / 2;
+  const inner = R + (Math.max(aw, ah) * 0.55 - R) * tension; // 速いほど暗い所が内側へ寄ってくる
+  const g = ctx.createRadialGradient(w / 2, h / 2, Math.max(0, inner), w / 2, h / 2, R);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, `rgba(0,0,0,${0.92 * tension})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
 }
 
 function drawPlayer(i) {

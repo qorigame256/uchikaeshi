@@ -66,7 +66,18 @@ export function sfxHit(ratio, just) {
   }
 }
 
-export const sfxSwing = () => noise(0.12, { gain: 0.12, freq: 1200, q: 0.6 });
+// 鼓動（ドクン・ドクン）。打ち合いの間に鳴らし、球が速いほど大きくする。
+// 低い音だけだとスマホやノートPCの小さなスピーカーで聞こえないので、1つ上の高さの音を少し重ねる
+// 大きさは最初 0.16〜0.42 だったが、本人が遊んで「うるさすぎる」と言ったので 2026-11-05 に約3分の1へ下げた（本人決定。数字は Claude の値）
+export function sfxHeart(ratio) {
+  const g = 0.055 + ratio * 0.085;
+  tone(72, 0.16, { type: 'sine', gain: g, slide: 0.6 });
+  tone(144, 0.07, { type: 'triangle', gain: g * 0.35, slide: 0.5 });
+  tone(64, 0.18, { type: 'sine', gain: g * 0.75, slide: 0.6, delay: 0.15 });
+  tone(128, 0.07, { type: 'triangle', gain: g * 0.25, slide: 0.5, delay: 0.15 });
+}
+
+export const sfxSwing =() => noise(0.12, { gain: 0.12, freq: 1200, q: 0.6 });
 export const sfxWall = () => tone(900, 0.05, { type: 'triangle', gain: 0.1 });
 export const sfxServe = () => tone(500, 0.15, { type: 'triangle', gain: 0.2, slide: 1.6 });
 
