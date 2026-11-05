@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "uchikaeshi",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve.js", "5178"],
+      "port": 5178
+    }
+  ]
+}

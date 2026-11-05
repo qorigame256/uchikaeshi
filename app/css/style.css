@@ -1,0 +1,53 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #04050b; color: #e8f0ff;
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+canvas#view { position: fixed; inset: 0; display: block; touch-action: none; }
+
+.panel { position: fixed; inset: 0; margin: auto; width: min(460px, calc(100% - 32px)); height: fit-content; max-height: calc(100% - 32px);
+  overflow-y: auto; padding: 24px; border-radius: 16px; background: rgba(10, 14, 30, 0.88);
+  border: 1px solid rgba(90, 200, 255, 0.35); box-shadow: 0 0 40px rgba(60, 180, 255, 0.15); text-align: center; }
+.panel[hidden] { display: none; }
+h1 { margin: 4px 0 8px; font-size: 34px; letter-spacing: 0.08em; color: #8ef; text-shadow: 0 0 18px #3cf, 0 0 4px #fff; }
+h2 { margin: 4px 0 12px; font-size: 24px; color: #8ef; }
+.lead { color: #b8c6e8; line-height: 1.7; font-size: 15px; }
+button { display: block; width: 100%; margin: 10px 0; padding: 14px; border-radius: 12px; border: 1px solid rgba(120, 200, 255, 0.4);
+  background: rgba(30, 50, 90, 0.7); color: #e8f0ff; font-size: 16px; font-family: inherit; cursor: pointer; }
+button:hover { background: rgba(40, 70, 120, 0.8); }
+button.primary { background: linear-gradient(180deg, #2bb8ff, #1477d6); border-color: #7fd8ff; font-weight: bold; box-shadow: 0 0 16px rgba(40, 180, 255, 0.4); }
+button.small { width: auto; display: inline-block; padding: 8px 16px; font-size: 14px; }
+button small { display: block; margin-top: 4px; font-size: 12px; color: #c5d4f0; font-weight: normal; }
+.howto { margin-top: 14px; text-align: left; font-size: 14px; color: #b8c6e8; }
+.howto summary { cursor: pointer; text-align: center; color: #8ef; }
+.howto li { margin: 6px 0; line-height: 1.6; }
+.keys { font-size: 13px; color: #9fb0d0; line-height: 1.7; }
+.status { color: #9fe; min-height: 1.4em; }
+.urlrow { display: flex; gap: 8px; align-items: center; }
+.urlrow input { flex: 1; min-width: 0; padding: 12px; border-radius: 10px; border: 1px solid #456; background: #0b1020; color: #e8f0ff; font-size: 14px; }
+.urlrow button { width: auto; margin: 0; }
+.field { display: block; margin: 14px 0; text-align: left; font-size: 14px; color: #b8c6e8; }
+.field input { display: block; width: 100%; margin-top: 6px; }
+.field input:not([type=range]) { padding: 10px; border-radius: 8px; border: 1px solid #456; background: #0b1020; color: #e8f0ff; font-size: 16px; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; }
+#hud[hidden] { display: none; }
+#topbar { position: absolute; top: max(8px, env(safe-area-inset-top)); left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 12px; font-size: 15px; }
+#topbar .side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+#topbar b { font-weight: normal; color: #b8c6e8; max-width: 30vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#topbar i { font-style: normal; font-size: 28px; font-weight: bold; }
+#topbar .me i { color: #4df; text-shadow: 0 0 10px #2bf; }
+#topbar .foe i { color: #f7a; text-shadow: 0 0 10px #f48; }
+#netMode { position: absolute; top: max(8px, env(safe-area-inset-top)); left: 12px; font-size: 12px; color: #7f90b0; }
+#speed { position: absolute; bottom: max(8px, env(safe-area-inset-bottom)); left: 0; right: 0; text-align: center; font-size: 14px; color: #c8d8ff; }
+#banner { position: absolute; top: 42%; left: 0; right: 0; text-align: center; font-size: 34px; font-weight: bold; color: #fff;
+  text-shadow: 0 0 20px #3cf, 0 0 6px #fff; opacity: 0; transform: scale(0.9); transition: opacity 0.2s, transform 0.2s; }
+#banner.on { opacity: 1; transform: scale(1); }
+#serveHint { position: absolute; bottom: 15%; left: 0; right: 0; text-align: center; color: #9ef; font-size: 15px; animation: blink 1.2s infinite; }
+#serveHint[hidden], #touchHint[hidden] { display: none; }
+#touchHint { position: absolute; top: 58%; left: 16px; right: 16px; text-align: center; font-size: 14px; line-height: 1.7; color: #e8f0ff;
+  background: rgba(10, 14, 30, 0.75); padding: 10px; border-radius: 10px; }
+@keyframes blink { 50% { opacity: 0.4; } }
+#btnQuit { position: absolute; top: max(6px, env(safe-area-inset-top)); right: 10px; margin: 0; pointer-events: auto; padding: 6px 12px; font-size: 13px; }
+#stickBase { position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 2px solid rgba(120, 220, 255, 0.4); background: rgba(40, 120, 200, 0.12); }
+#stickBase[hidden] { display: none; }
+#stickKnob { position: absolute; left: 30px; top: 30px; width: 50px; height: 50px; border-radius: 50%; background: rgba(120, 220, 255, 0.5); }

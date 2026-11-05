@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>打ち返し決闘</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/mqtt@5.16.1/dist/mqtt.min.js"></script>
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<!-- 試合中の表示 -->
+<div id="hud" hidden>
+  <div id="topbar">
+    <span class="side me"><b id="nameMe"></b><i id="scoreMe">0</i></span>
+    <span class="vs">-</span>
+    <span class="side foe"><i id="scoreFoe">0</i><b id="nameFoe"></b></span>
+  </div>
+  <div id="netMode"></div>
+  <div id="speed"></div>
+  <div id="banner"></div>
+  <div id="serveHint" hidden>振ってサーブ（5秒で自動）</div>
+  <div id="touchHint" hidden>左手で移動 ／ 右側に触れると振る<br>触れたまま指をはじくと、その向きへ打ち返す</div>
+  <button id="btnQuit" class="small">やめる</button>
+  <div id="stickBase" hidden><div id="stickKnob"></div></div>
+</div>
+
+<!-- タイトル -->
+<section id="title" class="panel">
+  <h1>打ち返し決闘</h1>
+  <p class="lead">相手の放った光の球を、剣で打ち返す。<br>返すたびに球は速くなる。取りこぼした方が負け。</p>
+  <div id="joinBox" hidden>
+    <p>部屋 <b id="joinCode"></b> に招待されています</p>
+    <button id="btnJoin" class="primary">参加する</button>
+  </div>
+  <div id="menuBox">
+    <button id="btnHost" class="primary">部屋を作って友だちを呼ぶ</button>
+    <button id="btnCpu">CPU と練習する</button>
+    <button id="btnSettings" class="small">設定</button>
+  </div>
+  <details class="howto">
+    <summary>遊び方</summary>
+    <ul>
+      <li>自分の後ろの壁（青い線）に球が当たると、相手に1点。先に5点取った方の勝ち。</li>
+      <li>振ると剣が一瞬だけ出る。振り終わったあとは少しのあいだ動けないので、むやみに振らない。</li>
+      <li>球が剣の届く輪に入る瞬間に振ると「ぴったり打ち」。ぐんと速い球で返せる。</li>
+      <li>球は、振った瞬間に向いている方へ飛ぶ。横の壁では跳ね返る。</li>
+      <li>点を取られた側が次の球を出す。</li>
+    </ul>
+    <p class="keys">PC: WASD 移動 ／ マウスで向き ／ クリック（またはスペース）で振る<br>スマホ: 左手で移動 ／ 右側に触れると振る（はじいた向きへ返す）</p>
+  </details>
+</section>
+
+<!-- CPU の強さを選ぶ -->
+<section id="cpuPick" class="panel" hidden>
+  <h2>CPU の強さを選ぶ</h2>
+  <div id="cpuLevels">
+    <button data-level="easy">やさしい<small>動き出しが遅く、返す向きもまっすぐ</small></button>
+    <button data-level="normal" class="primary">ふつう<small>ときどき左右へ打ち分けてくる</small></button>
+    <button data-level="hard">つよい<small>ぴったり打ちが多く、あなたのいない側をねらう</small></button>
+  </div>
+  <button id="btnCpuBack" class="small">もどる</button>
+</section>
+
+<!-- 設定 -->
+<section id="settings" class="panel" hidden>
+  <h2>設定</h2>
+  <label class="field">名前（相手の画面に出る・10文字まで）<input id="setName" maxlength="10" placeholder="なし"></label>
+  <label class="field">音量 <b id="setVolV"></b><input id="setVol" type="range" min="0" max="1" step="0.05"></label>
+  <button id="btnSettingsClose" class="primary">もどる</button>
+</section>
+
+<!-- 待合室 -->
+<section id="lobby" class="panel" hidden>
+  <h2>部屋 <span id="roomCode"></span></h2>
+  <div id="roomShare">
+    <p>このアドレスを友だちに送ってください。</p>
+    <div class="urlrow"><input id="roomUrl" readonly><button id="btnCopy">コピー</button></div>
+  </div>
+  <p id="lobbyStatus" class="status"></p>
+  <button id="btnLeave">やめる</button>
+</section>
+
+<!-- 試合の終わり -->
+<section id="result" class="panel" hidden>
+  <h2 id="resultTitle"></h2>
+  <p id="resultScore"></p>
+  <p id="resultStats" class="lead"></p>
+  <button id="btnAgain" class="primary">もう一度</button>
+  <p id="againWait" class="status" hidden>相手が「もう一度」を押すのを待っています</p>
+  <button id="btnBack">タイトルへ</button>
+</section>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
